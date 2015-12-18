@@ -27,7 +27,7 @@ DX = xgb.DMatrix(sp, label=y)
 params = {'booster':'gbtree',
      'max_depth':8,
 #     'min_child_weight':4,
-     'eta':0.3,
+     'eta':0.03,
 #     'gamma':0.25,
      'silent':1,
      'objective':'multi:softprob',
@@ -42,11 +42,13 @@ params = {'booster':'gbtree',
      'eval_metric':'mlogloss'
      }
  
-xgb.cv(params=params, dtrain=DX, nfold=2, show_progress=True, num_boost_round=100)
+#xgb.cv(params=params, dtrain=DX, nfold=2, show_progress=True, num_boost_round=2000)
 
-#clf = xgb.sklearn.XGBClassifier(max_depth=5, objective='multi:softprob', n_estimators=30)
+#qwe
+#clf = xgb.sklearn.XGBClassifier(max_depth=9, objective='multi:softprob', n_estimators=1100, 
+#                                learning_rate=0.03, subsample=0.9, colsample_bytree=0.9)
 bst = xgb.Booster(params, [DX])
-for i in range(80):
+for i in range(1100):
     bst.update(DX, i)
     print ('teration: ', i)
 

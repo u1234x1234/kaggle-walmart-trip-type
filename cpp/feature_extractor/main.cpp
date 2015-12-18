@@ -135,6 +135,7 @@ void gen_features(const map<int,trip_info> &trips, string mode = "train")
 		int nan_flag2 = 0;
 		int nan_flag3 = 0;
 		int scan_count = 0;
+		int scan_count_sum = 0;
 		int ret_count = 0;
 
 		map<int, int> hist[4];
@@ -151,7 +152,8 @@ void gen_features(const map<int,trip_info> &trips, string mode = "train")
 				hist[0][trip.second.data[0][i] + 7] += trip.second.data[1][i];
 				hist[1][trip.second.data[2][i] + 7 + 98148] += trip.second.data[1][i];
 				hist[2][trip.second.data[3][i] + 7 + 98148 + 68] += trip.second.data[1][i];
-				scan_count += trip.second.data[1][i];
+				scan_count_sum += trip.second.data[1][i];
+				scan_count++;
 			}
 
 			if (trip.second.data[0][i] == 563)
@@ -173,12 +175,13 @@ void gen_features(const map<int,trip_info> &trips, string mode = "train")
 //		write(7 + 98148 + 68 + 5204 + 3, nan_flag2);
 //		write(7 + 98148 + 68 + 5204 + 4, nan_flag3);
 		write(7 + 98148 + 68 + 5204 + 5, scan_count);
+		write(7 + 98148 + 68 + 5204 + 6, scan_count_sum);
 
-		write(7 + 98148 + 68 + 5204 + 6, hist[0].size());
-		write(7 + 98148 + 68 + 5204 + 7, hist[1].size());
-		write(7 + 98148 + 68 + 5204 + 8, hist[2].size());
+		write(7 + 98148 + 68 + 5204 + 7, hist[0].size());
+		write(7 + 98148 + 68 + 5204 + 8, hist[1].size());
+		write(7 + 98148 + 68 + 5204 + 9, hist[2].size());
 
-//		write(7 + 98148 + 68 + 5204 + 4, ret_count);
+		write(7 + 98148 + 68 + 5204 + 10, ret_count);
 //		write(7 + 98148 + 68 + 5204 + 4, trip.second.weekday);
 
 		size += (writed_cnt);
