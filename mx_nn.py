@@ -32,7 +32,7 @@ y = lbl_enc.fit_transform(y)
 #indices = np.argsort(model_tmp.feature_importances_)[::-1]
 #indices.tofile('indices.tmp')
 indices = np.fromfile('indices.tmp', dtype=np.int64)
-indices = indices[:300]
+indices = indices[:600]
 X = sp[:, indices].todense()
 X_test = sp_test[:, indices].todense()
 
@@ -40,27 +40,31 @@ print ('after feature selection: ', X.shape)
 
 X = np.log(1 + X)
 X_test = np.log(1 + X_test)
-pre = preprocessing.StandardScaler()
-X = pre.fit_transform(X)
-X_test = pre.transform(X_test)
-batch_size = 256
+#pre = preprocessing.StandardScaler()
+#X = pre.fit_transform(X)
+#X_test = pre.transform(X_test)
 
 def get_mlp():
     data = mx.symbol.Variable('data')
-    x  = mx.symbol.FullyConnected(data = data, name='fc1', num_hidden=256)
+    x  = mx.symbol.FullyConnected(data = data, name='fc1', num_hidden=300)
     x = mx.symbol.BatchNorm(data=x)
 #    x = mx.symbol.Activation(data = x, name='relu1', act_type="relu")
     x = mx.symbol.LeakyReLU(data=x)
     x = mx.symbol.Dropout(data = x, p=0.5)
-    x  = mx.symbol.FullyConnected(data = x, name = 'fc2', num_hidden=256)
+    x  = mx.symbol.FullyConnected(data = x, name = 'fc2', num_hidden=300)
     x = mx.symbol.BatchNorm(data=x)
     x = mx.symbol.LeakyReLU(data=x)
 #    x = mx.symbol.Activation(data = x, act_type="relu")
     x = mx.symbol.Dropout(data = x, p=0.5)
     
-    x  = mx.symbol.FullyConnected(data = x, name = 'fc12', num_hidden=256)
+    x  = mx.symbol.FullyConnected(data = x, name = 'fc12', num_hidden=300)
     x = mx.symbol.BatchNorm(data=x)
-    x = mx.symbol.LeakyReLU(data=x)
+    x = mx.symbol.LeakyReLU(data=x)    
+#    x = mx.symbol.Dropout(data = x, p=0.5)
+    
+#    x  = mx.symbol.FullyConnected(data = x, name = 'fc22', num_hidden=256)
+#    x = mx.symbol.BatchNorm(data=x)
+#    x = mx.symbol.LeakyReLU(data=x)
 #    x = mx.symbol.Activation(data = x, act_type="relu")
 #    x = mx.symbol.Dropout(data = x, p=0.5)
 #    x  = mx.symbol.FullyConnected(data = x, name = 'fc3', num_hidden = 200)
@@ -75,17 +79,17 @@ def logloss(label, pred_prob):
     return metrics.log_loss(label, pred_prob)
 
 res_preds = np.array([])
-for i in range(10):
+for i in range(5):
     net = get_mlp()
         
     model = mx.model.FeedForward(
             ctx                = mx.gpu(),
             symbol             = net,
-            num_epoch          = 100,
+            num_epoch          = 60,
             learning_rate      = 0.01,
             momentum           = 0.9,
             wd                 = 0.000001
-    #        ,initializer        = mx.init.Xavier(factor_type="in", magnitude=1)
+#            ,initializer        = mx.init.Xavier(factor_type="in", magnitude=1)
             ,initializer       = mx.initializer.Normal(sigma=0.01)
             )
     
@@ -95,7 +99,7 @@ for i in range(10):
     X_train, X_val, y_train, y_val = cross_validation.train_test_split(X, y, test_size=0.01)
     
     batch_size = 256
-    data_shape = (batch_size, 300)
+    data_shape = (batch_size, 400)
     
     train_iter = mx.io.NDArrayIter(X_train, y_train, batch_size = batch_size, shuffle=True)
     val_iter = mx.io.NDArrayIter(X_val, y_val, batch_size = batch_size)
@@ -113,11 +117,11 @@ for i in range(10):
     res_preds = (res_preds + preds) if res_preds.size else preds
     print (res_preds.shape)
 
-res_preds = res_preds / 10
+res_preds = res_preds / 5
 
 sub = pd.read_csv('sample_submission.csv')
 sub.ix[:, 1:] = res_preds
-sub.to_csv('res_nn_1.csv', index=False, float_format='%.5f')
+sub.to_csv('res_nn_2.csv', index=False, float_format='%.5f')
 
 
   

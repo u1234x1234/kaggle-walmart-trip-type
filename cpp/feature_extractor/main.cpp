@@ -122,13 +122,12 @@ void gen_features(const map<int,trip_info> &trips, string mode = "train")
 	for (auto &trip : trips)
 	{
 		int writed_cnt = 0;
-		auto write = [&](int idx, int val) -> void
+		auto write = [&](int idx, float val) -> void
 		{
 			out_indices.write(reinterpret_cast<char*>(&idx), sizeof(idx));
 			out_data.write(reinterpret_cast<char*>(&val), sizeof(val));
 			writed_cnt++;
 		};
-		write(trip.second.weekday, 1);
 
 		int ret_flag = 0;
 		int nan_flag1 = 0;
@@ -139,19 +138,25 @@ void gen_features(const map<int,trip_info> &trips, string mode = "train")
 		int ret_count = 0;
 
 		map<int, int> hist[4];
-
+		map<int, int> hist_count;
+		vector<int> cnts(3);
 		for (size_t i = 0; i < trip.second.data[0].size(); i++)
 		{
 			if (trip.second.data[1][i] < 0) // return
 			{
 				ret_flag++;
-				ret_count += trip.second.data[1][i];
+				ret_count += (-trip.second.data[1][i]);
 			}
 			else
 			{
-				hist[0][trip.second.data[0][i] + 7] += trip.second.data[1][i];
-				hist[1][trip.second.data[2][i] + 7 + 98148] += trip.second.data[1][i];
-				hist[2][trip.second.data[3][i] + 7 + 98148 + 68] += trip.second.data[1][i];
+				int q = trip.second.data[1][i];
+				q = 1;
+
+				hist[0][trip.second.data[0][i]] += q;
+				hist[1][trip.second.data[2][i]] += q;
+				hist[2][trip.second.data[3][i]] += q;
+				hist_count[trip.second.data[1][i]]++;
+
 				scan_count_sum += trip.second.data[1][i];
 				scan_count++;
 			}
@@ -163,26 +168,60 @@ void gen_features(const map<int,trip_info> &trips, string mode = "train")
 			if (trip.second.data[3][i] == 418)
 				nan_flag1++;
 		}
+		int num_unique = 0;
+		int offset = 0;
+		write(offset + trip.second.weekday, 1);
+		offset += 7;
 		for (int i = 0; i < 3; i++)
+		{
 			for (auto &it : hist[i])
 			{
-				write(it.first, it.second);
+				write(offset + it.first, it.second / (float)scan_count);
+				num_unique++;
 			}
+			if (i == 0)
+				offset += 98148;
+			if (i == 1)
+				offset += 68;
+			if (i == 2)
+				offset += 5204;
+		}
+		for (int i = 0; i < 10; i++)
+			write(offset + i, hist_count[i]);
+		offset += 10;
 
-		write(7 + 98148 + 68 + 5204, ret_flag);
-		write(7 + 98148 + 68 + 5204 + 1, trip.second.data[0].size());
-		write(7 + 98148 + 68 + 5204 + 2, nan_flag1);
+//		for (auto &it1 : hist[1])
+//			for (auto &it2 : hist[2])
+//				write(offset + it1.first*5204 + it2.first, it1.second + it2.second);
+//		offset += 68 * 5204;
+
+//		write(offset++, num_unique);
+		write(offset++, ret_count);
+		write(offset++, trip.second.data[0].size());
+		write(offset++, nan_flag1);
 //		write(7 + 98148 + 68 + 5204 + 3, nan_flag2);
 //		write(7 + 98148 + 68 + 5204 + 4, nan_flag3);
-		write(7 + 98148 + 68 + 5204 + 5, scan_count);
-		write(7 + 98148 + 68 + 5204 + 6, scan_count_sum);
+		write(offset++, scan_count);
+		write(offset++, scan_count_sum);
+		write(offset++, hist[0].size());
+		write(offset++, hist[1].size());
+		write(offset++, hist[2].size());
 
-		write(7 + 98148 + 68 + 5204 + 7, hist[0].size());
-		write(7 + 98148 + 68 + 5204 + 8, hist[1].size());
-		write(7 + 98148 + 68 + 5204 + 9, hist[2].size());
 
-		write(7 + 98148 + 68 + 5204 + 10, ret_count);
-//		write(7 + 98148 + 68 + 5204 + 4, trip.second.weekday);
+//		write(offset + 8, ret_count);
+
+//		write(7 + 98148 + 68 + 5204 + 11, num_unique);
+
+
+//		write(7 + 98148 + 68 + 5204 + 11, num_unique);
+		//relative ratio
+
+//		write(offset + 8, hist[0].size() / (float)num_unique);
+//		write(offset + 9, hist[1].size() / (float)num_unique);
+//		write(offset + 10, hist[2].size() / (float)num_unique);
+
+//		write(7 + 98148 + 68 + 5204 + 11, trip.second.weekday >= 5);
+
 
 		size += (writed_cnt);
 		out_indptr.write(reinterpret_cast<char*>(&size), sizeof(size));

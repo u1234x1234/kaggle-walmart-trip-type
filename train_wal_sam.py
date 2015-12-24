@@ -6,16 +6,16 @@ import xgboost as xgb
 from scipy import sparse
 
 indices = np.fromfile('train.indices', np.int32)
-data = np.fromfile('train.data', np.int32)
+data = np.fromfile('train.data', np.float32)
 indptr = np.fromfile('train.indptr', np.int32)
 y = np.fromfile('train.y', np.int32)
 
 indices_test = np.fromfile('test.indices', np.int32)
-data_test = np.fromfile('test.data', np.int32)
+data_test = np.fromfile('test.data', np.float32)
 indptr_test = np.fromfile('test.indptr', np.int32)
 
 print (indices.shape, data.shape, indptr.shape, y.shape)
-sp = sparse.csr_matrix((data, indices, indptr))
+sp = sparse.csr_matrix((data, indices, indptr), dtype=np.float32)
 sp_test = sparse.csr_matrix((data_test, indices_test, indptr_test))
 print (sp.shape, sp_test.shape)
 
@@ -25,7 +25,7 @@ y = lbl_enc.fit_transform(y)
 DX = xgb.DMatrix(sp, label=y)
 
 params = {'booster':'gbtree',
-     'max_depth':8,
+     'max_depth':10,
 #     'min_child_weight':4,
      'eta':0.03,
 #     'gamma':0.25,
@@ -41,14 +41,14 @@ params = {'booster':'gbtree',
       'colsample_bytree':0.9,
      'eval_metric':'mlogloss'
      }
- 
+
 #xgb.cv(params=params, dtrain=DX, nfold=2, show_progress=True, num_boost_round=2000)
 
 #qwe
 #clf = xgb.sklearn.XGBClassifier(max_depth=9, objective='multi:softprob', n_estimators=1100, 
 #                                learning_rate=0.03, subsample=0.9, colsample_bytree=0.9)
 bst = xgb.Booster(params, [DX])
-for i in range(1100):
+for i in range(800):
     bst.update(DX, i)
     print ('teration: ', i)
 
@@ -60,7 +60,7 @@ preds = bst.predict(DT)
 print (preds.shape)
 sub = pd.read_csv('sample_submission.csv')
 sub.ix[:, 1:] = preds
-sub.to_csv('res.csv', index=False, float_format='%.4f')
+sub.to_csv('res4.csv', index=False)
 
 
  
