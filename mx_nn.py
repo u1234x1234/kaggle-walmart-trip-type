@@ -31,6 +31,7 @@ y = lbl_enc.fit_transform(y)
 #model_tmp = ensemble.RandomForestClassifier(n_estimators=200, n_jobs=-1).fit(sp, y)
 #indices = np.argsort(model_tmp.feature_importances_)[::-1]
 #indices.tofile('indices.tmp')
+#qwe
 indices = np.fromfile('indices.tmp', dtype=np.int64)
 indices = indices[:600]
 X = sp[:, indices].todense()
@@ -38,11 +39,11 @@ X_test = sp_test[:, indices].todense()
 
 print ('after feature selection: ', X.shape)
 
-X = np.log(1 + X)
-X_test = np.log(1 + X_test)
-#pre = preprocessing.StandardScaler()
-#X = pre.fit_transform(X)
-#X_test = pre.transform(X_test)
+#X = np.log(1 + X)
+#X_test = np.log(1 + X_test)
+pre = preprocessing.StandardScaler()
+X = pre.fit_transform(X)
+X_test = pre.transform(X_test)
 
 def get_mlp():
     data = mx.symbol.Variable('data')
@@ -79,13 +80,13 @@ def logloss(label, pred_prob):
     return metrics.log_loss(label, pred_prob)
 
 res_preds = np.array([])
-for i in range(5):
+for i in range(10):
     net = get_mlp()
         
     model = mx.model.FeedForward(
             ctx                = mx.gpu(),
             symbol             = net,
-            num_epoch          = 60,
+            num_epoch          = 100,
             learning_rate      = 0.01,
             momentum           = 0.9,
             wd                 = 0.000001
@@ -115,13 +116,13 @@ for i in range(5):
         logger = logger)
     preds = model.predict(X_test)
     res_preds = (res_preds + preds) if res_preds.size else preds
-    print (res_preds.shape)
+    print (i, res_preds.shape)
 
-res_preds = res_preds / 5
+res_preds = res_preds / 10
 
 sub = pd.read_csv('sample_submission.csv')
 sub.ix[:, 1:] = res_preds
-sub.to_csv('res_nn_2.csv', index=False, float_format='%.5f')
+sub.to_csv('res_nn_6.csv', index=False)
 
 
   

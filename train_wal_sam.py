@@ -25,13 +25,13 @@ y = lbl_enc.fit_transform(y)
 DX = xgb.DMatrix(sp, label=y)
 
 params = {'booster':'gbtree',
-     'max_depth':10,
+     'max_depth':12,
 #     'min_child_weight':4,
      'eta':0.03,
 #     'gamma':0.25,
      'silent':1,
      'objective':'multi:softprob',
-#     'lambda':1.5,
+#     'lambda':1.,
 #     'alpha':1.0,
 #      'lambda_bias':0.5,
      'nthread':8,
@@ -60,7 +60,7 @@ preds = bst.predict(DT)
 print (preds.shape)
 sub = pd.read_csv('sample_submission.csv')
 sub.ix[:, 1:] = preds
-sub.to_csv('res4.csv', index=False)
+sub.to_csv('res7.csv', index=False)
 
 
  
